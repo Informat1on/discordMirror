@@ -4,7 +4,14 @@ import fetch, { Response } from 'node-fetch';
 import {
   Channel, Guild, WebhookConfig,
 } from '../interfaces/interfaces';
-import { discordToken, serverId, headers } from '../util/env';
+import { discordToken, serverId, headers, errorWebhookUrl, unfilteredWebhookUrl } from '../util/env';
+import { Webhook } from "webhook-discord";
+
+const options = {
+  year: 'numeric', month: 'numeric', day: 'numeric',
+  hour: 'numeric', minute: 'numeric', second: 'numeric',
+  hour12: false
+};
 
 export const createWebhook = async (channelId: string): Promise<string> => fetch(`https://discord.com/api/v8/channels/${channelId}/webhooks`, {
   method: 'POST',
@@ -45,9 +52,14 @@ export const listen = async (): Promise<void> => {
   const socket = new Websocket('wss://gateway.discord.gg/?v=6&encoding=json');
   let authenticated = false;
 
+  if (serverMap) {
+    console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options),'] Channel webhooks loaded');
+  }
+
   socket.on('open', () => {
-    console.log('Connected to Discord API');
+    console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Connected to Discord API');
   });
+
   socket.on('message', async (data: Websocket.Data) => {
     const message = JSON.parse(data.toString());
 
@@ -82,12 +94,25 @@ export const listen = async (): Promise<void> => {
         break;
       case 0:
         if (message.t === 'MESSAGE_CREATE' && message.d.guild_id === serverId) {
-          const { content, embeds, channel_id: channelId } = message.d;
+          let { content, embeds, channel_id: channelId, attachments } = message.d;
           const {
             avatar, username, id, discriminator,
           } = message.d.author;
           const avatarUrl = `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`;
-          const webhookUrl = serverMap[channelId];
+          let webhookUrl = serverMap[channelId];
+
+          if (webhookUrl === 'https://discord.com/api/v8/webhooks/undefined/undefined') {
+            console.log('[', new Date(Date.now())
+                .toLocaleString('ru-Ru', options), '] i havent found webhook for channelId: ', channelId);
+            webhookUrl = unfilteredWebhookUrl;
+            await sendErrorToDiscord('I havent found webhook for channelId: ' + channelId);
+          }
+
+          //если отправляется изображение
+          if (attachments.length > 0 && attachments[0].url) {
+            content = content + '\n' + attachments[0].url;
+          }
+
           const hookContent: WebhookConfig = {
             content,
             embeds,
@@ -96,7 +121,12 @@ export const listen = async (): Promise<void> => {
             avatar: avatarUrl,
           };
 
-          executeWebhook(hookContent);
+          try {
+            await executeWebhook(hookContent);
+          } catch (e) {
+            //send error to ds channel
+            await sendErrorToDiscord(e);
+          }
         }
         break;
       default:
@@ -164,3 +194,8 @@ export const createServer = async (channels: Channel[]): Promise<void> => {
     resolve();
   });
 };
+
+async function sendErrorToDiscord(exceptionText: any): Promise<void> {
+  const webhook = new Webhook(errorWebhookUrl!);
+  webhook.err('There is Error', exceptionText);
+}
