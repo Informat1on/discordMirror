@@ -73,6 +73,14 @@ export const listen = async (): Promise<void> => {
     const message = JSON.parse(data.toString());
 
     switch (message.op) {
+
+      // 9 - Invalid Session
+      case 9:
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Invalid session');
+        await sendErrorToDiscord('Invalid session');
+        break;
+
+      // 10 - Hello
       case 10:
         socket.send(JSON.stringify({
           op: 1,
@@ -85,6 +93,8 @@ export const listen = async (): Promise<void> => {
           }));
         }, message.d.heartbeat_interval);
         break;
+
+      // 11 - Heartbeat ACK
       case 11:
         if (!authenticated) {
           socket.send(JSON.stringify({
@@ -101,6 +111,8 @@ export const listen = async (): Promise<void> => {
           authenticated = true;
         }
         break;
+
+      // 0 - Dispatch
       case 0:
         if (message.t === 'MESSAGE_CREATE' && message.d.guild_id === serverId) {
           let { content, embeds, channel_id: channelId, attachments } = message.d;
@@ -138,6 +150,7 @@ export const listen = async (): Promise<void> => {
           }
         }
         break;
+
       default:
         break;
     }
