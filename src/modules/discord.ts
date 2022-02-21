@@ -64,9 +64,11 @@ export const listen = async (): Promise<void> => {
   let authenticated = false;
   let sequenceNumber: number;
 
-  if (serverMap) {
-    console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options),'] Channel webhooks loaded');
+  // if no servers loaded
+  if (!serverMap) {
+    return ;
   }
+  console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options),'] Channel webhooks loaded');
 
   socket.on('open', () => {
     console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Connected to Discord API');
@@ -95,14 +97,15 @@ export const listen = async (): Promise<void> => {
         await sendInfoToDiscord('Reconnecting..');
         // session_id - takes from ready
         // seq - last sequence number received
-        socket.send(JSON.stringify({
+        const payload = {
           op: 6,
           d: {
             token: discordToken,
             session_id: sessionId,
             seq: sequenceNumber,
           },
-        }));
+        }
+        socket.send(JSON.stringify(payload));
         break;
 
       // 9 - Invalid Session
@@ -114,23 +117,23 @@ export const listen = async (): Promise<void> => {
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
       // 10 - Hello
       case 10:
-        socket.send(JSON.stringify({
+        const messagePayload = {
           op: 1,
           d: message.s,
-        }));
+        };
+        socket.send(JSON.stringify(messagePayload));
+
         setInterval(() => {
-          socket.send(JSON.stringify({
-            op: 1,
-            d: message.s,
-          }));
+          socket.send(JSON.stringify(messagePayload));
         }, message.d.heartbeat_interval);
         break;
 
       // 11 - Heartbeat ACK
       case 11:
         if (!authenticated) {
-          socket.send(JSON.stringify({
+          const payload = {
             op: 2,
+            intents: 513,
             d: {
               token: discordToken,
               properties: {
@@ -139,7 +142,8 @@ export const listen = async (): Promise<void> => {
                 $device: 'test',
               },
             },
-          }));
+          }
+          socket.send(JSON.stringify(payload));
           authenticated = true;
         }
         break;
@@ -148,7 +152,7 @@ export const listen = async (): Promise<void> => {
       case 0:
         if (
             message.t === 'MESSAGE_CREATE' &&
-            (message.d.guild_id === mainServerId || message.d.guild_id == secondServerId)
+            (message.d.guild_id === mainServerId)
         ) {
           sequenceNumber = message.s;
           let { content, embeds, channel_id: channelId, attachments } = message.d;
@@ -199,6 +203,10 @@ export const listen = async (): Promise<void> => {
         }
         break;
     }
+  });
+
+  socket.on('ready', async (data: Websocket.Data) =>{
+    console.log('data from ready is: ', data);
   });
 };
 
