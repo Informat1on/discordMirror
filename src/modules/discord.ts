@@ -2,9 +2,18 @@ import Websocket from 'ws';
 import jsonfile from 'jsonfile';
 import fetch, { Response } from 'node-fetch';
 import {
-  Channel, Guild, WebhookConfig,
+  Channel,
+  Guild,
+  WebhookConfig,
 } from '../interfaces/interfaces';
-import { discordToken, serverId, headers, errorWebhookUrl, unfilteredWebhookUrl } from '../util/env';
+import {
+  discordToken,
+  serverId,
+  headers,
+  errorWebhookUrl,
+  unfilteredWebhookUrl,
+  undefinedWebhookUrl
+} from '../util/env';
 import { Webhook } from "webhook-discord";
 
 const options = {
@@ -101,11 +110,11 @@ export const listen = async (): Promise<void> => {
           const avatarUrl = `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`;
           let webhookUrl = serverMap[channelId];
 
-          if (webhookUrl === 'https://discord.com/api/v8/webhooks/undefined/undefined') {
+          if (webhookUrl === undefinedWebhookUrl) {
             console.log('[', new Date(Date.now())
                 .toLocaleString('ru-Ru', options), '] i havent found webhook for channelId: ', channelId);
             webhookUrl = unfilteredWebhookUrl;
-            await sendErrorToDiscord('I havent found webhook for channelId: ' + channelId);
+            await sendErrorToDiscord(`I havent found webhook for channelId: ${channelId}`);
           }
 
           //если отправляется изображение
@@ -125,7 +134,7 @@ export const listen = async (): Promise<void> => {
             await executeWebhook(hookContent);
           } catch (e) {
             //send error to ds channel
-            await sendErrorToDiscord(e);
+            await sendErrorToDiscord(e.statusText || 'There is error with sending webhook.');
           }
         }
         break;
@@ -195,7 +204,7 @@ export const createServer = async (channels: Channel[]): Promise<void> => {
   });
 };
 
-async function sendErrorToDiscord(exceptionText: any): Promise<void> {
+async function sendErrorToDiscord(exceptionText: string): Promise<void> {
   const webhook = new Webhook(errorWebhookUrl!);
-  webhook.err('There is Error', exceptionText);
+  webhook.err('Error', exceptionText);
 }
