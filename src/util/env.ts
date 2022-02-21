@@ -8,6 +8,7 @@ const {
   ERROR_WEBHOOK_URL: errorWebhookUrl,
   UNFILTERED_WEBHOOK_URL: unfilteredWebhookUrl,
   UNDEFINED_WEBHOOK_URL: undefinedWebhookUrl,
+  SESSION_ID: sessionId,
 } = process.env;
 
 const headers = {
@@ -22,4 +23,5 @@ export {
   errorWebhookUrl,
   unfilteredWebhookUrl,
   undefinedWebhookUrl,
+  sessionId,
 };

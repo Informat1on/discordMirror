@@ -12,7 +12,8 @@ import {
   headers,
   errorWebhookUrl,
   unfilteredWebhookUrl,
-  undefinedWebhookUrl
+  undefinedWebhookUrl,
+  sessionId,
 } from '../util/env';
 import { Webhook } from "webhook-discord";
 
@@ -58,8 +59,9 @@ export const createChannel = async (name: string, pos: number, newId: string, pa
 
 export const listen = async (): Promise<void> => {
   const serverMap = jsonfile.readFileSync('./map.json');
-  const socket = new Websocket('wss://gateway.discord.gg/?v=6&encoding=json');
+  const socket = new Websocket('wss://gateway.discord.gg/?v=9&encoding=json');
   let authenticated = false;
+  let sequenceNumber: number;
 
   if (serverMap) {
     console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options),'] Channel webhooks loaded');
@@ -74,12 +76,41 @@ export const listen = async (): Promise<void> => {
 
     switch (message.op) {
 
+      // 2 - Ready(Only receive). Complete Websocket handshake.
+      // case 2:
+      //   console.log('Message from ready is: ', message);
+      //   socket.send(JSON.stringify({
+      //     v: 9,
+      //     user: "",
+      //     guilds: "",
+      //     session_id: sessionId,
+      //     application: "",
+      //   }));
+      //   break;
+
+      // 7 - Reconnect. We should try to reconnect.
+      case 7:
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Reconnecting..');
+        await sendInfoToDiscord('Reconnecting..');
+        // session_id - takes from ready
+        // seq - last sequence number received
+        socket.send(JSON.stringify({
+          op: 6,
+          d: {
+            token: discordToken,
+            session_id: sessionId,
+            seq: sequenceNumber,
+          },
+        }));
+        break;
+
       // 9 - Invalid Session
       case 9:
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Invalid session');
         await sendErrorToDiscord('Invalid session');
         break;
 
+      // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
       // 10 - Hello
       case 10:
         socket.send(JSON.stringify({
@@ -115,6 +146,7 @@ export const listen = async (): Promise<void> => {
       // 0 - Dispatch
       case 0:
         if (message.t === 'MESSAGE_CREATE' && message.d.guild_id === serverId) {
+          sequenceNumber = message.s;
           let { content, embeds, channel_id: channelId, attachments } = message.d;
           const {
             avatar, username, id, discriminator,
@@ -159,7 +191,7 @@ export const listen = async (): Promise<void> => {
           await sendInfoToDiscord(message);
         } catch (e) {
           //send error to ds channel
-          await sendErrorToDiscord(e.statusText || 'There is error with sending webhook.');
+          await sendErrorToDiscord(e.op || 'There is error with sending webhook.');
         }
         break;
     }
