@@ -8,7 +8,8 @@ import {
 } from '../interfaces/interfaces';
 import {
   discordToken,
-  serverId,
+  mainServerId,
+  secondServerId,
   headers,
   errorWebhookUrl,
   unfilteredWebhookUrl,
@@ -145,7 +146,10 @@ export const listen = async (): Promise<void> => {
 
       // 0 - Dispatch
       case 0:
-        if (message.t === 'MESSAGE_CREATE' && message.d.guild_id === serverId) {
+        if (
+            message.t === 'MESSAGE_CREATE' &&
+            (message.d.guild_id === mainServerId || message.d.guild_id == secondServerId)
+        ) {
           sequenceNumber = message.s;
           let { content, embeds, channel_id: channelId, attachments } = message.d;
           const {
@@ -198,7 +202,7 @@ export const listen = async (): Promise<void> => {
   });
 };
 
-export const getChannels = async (): Promise<Channel[]> => fetch(`https://discord.com/api/v8/guilds/${serverId}/channels`, {
+export const getChannels = async (): Promise<Channel[]> => fetch(`https://discord.com/api/v8/guilds/${mainServerId}/channels`, {
   method: 'GET',
   headers,
 }).then((res) => res.json())
