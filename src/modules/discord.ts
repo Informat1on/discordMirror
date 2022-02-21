@@ -152,6 +152,15 @@ export const listen = async (): Promise<void> => {
         break;
 
       default:
+        // if havent found case, it sends message to DS
+        console.log('[', new Date(Date.now())
+            .toLocaleString('ru-Ru', options), '] Message: ', message);
+        try {
+          await sendInfoToDiscord(message);
+        } catch (e) {
+          //send error to ds channel
+          await sendErrorToDiscord(e.statusText || 'There is error with sending webhook.');
+        }
         break;
     }
   });
@@ -220,4 +229,9 @@ export const createServer = async (channels: Channel[]): Promise<void> => {
 async function sendErrorToDiscord(exceptionText: string): Promise<void> {
   const webhook = new Webhook(errorWebhookUrl!);
   webhook.err('Error', exceptionText);
+}
+
+async function sendInfoToDiscord(messageText: string): Promise<void> {
+  const webhook = new Webhook(errorWebhookUrl!);
+  webhook.info('Error', messageText);
 }
