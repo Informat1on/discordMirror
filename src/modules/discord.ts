@@ -76,53 +76,9 @@ export const listen = async (): Promise<void> => {
 
   socket.on('message', async (data: Websocket.Data) => {
     const message = JSON.parse(data.toString());
+    console.log('message op is: ', message.op);
 
     switch (message.op) {
-
-      // 0 - Dispatch
-      case 0:
-        sequenceNumber = message.s;
-        if (
-            message.t === 'MESSAGE_CREATE' && message.d.guild_id === mainServerId
-        ) {
-          let { content, embeds, channel_id: channelId, attachments } = message.d;
-          const {
-            avatar, username, id, discriminator,
-          } = message.d.author;
-          const avatarUrl = `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`;
-          let webhookUrl = serverMap[channelId];
-
-          if (webhookUrl === undefinedWebhookUrl) {
-            console.log('[', new Date(Date.now())
-                .toLocaleString('ru-Ru', options), '] i havent found webhook for channelId: ', channelId);
-            webhookUrl = unfilteredWebhookUrl;
-            await sendErrorToDiscord(`I havent found webhook for channelId: ${channelId}`);
-          }
-
-          //если отправляется изображение
-          if (attachments.length > 0 && attachments[0].url) {
-            content = content + '\n' + attachments[0].url;
-          }
-
-          const hookContent: WebhookConfig = {
-            content,
-            embeds,
-            username: `${username}#${discriminator}`,
-            url: webhookUrl,
-            avatar: avatarUrl,
-          };
-
-          try {
-            await executeWebhook(hookContent);
-          } catch (e) {
-            console.log('[', new Date(Date.now())
-                .toLocaleString('ru-Ru', options), '] Message: ', message);
-            //send error to ds channel
-            await sendErrorToDiscord(e || 'There is error with sending 0 case webhook.');
-          }
-        }
-        break;
-
       // 1 - Heartbeat
       case 1:
         let heartBeatPayload = {
@@ -192,6 +148,50 @@ export const listen = async (): Promise<void> => {
           }
           socket.send(JSON.stringify(payload));
           authenticated = true;
+        }
+        break;
+
+        // 0 - Dispatch
+      case 0:
+        sequenceNumber = message.s;
+        if (
+            message.t === 'MESSAGE_CREATE' && message.d.guild_id === mainServerId
+        ) {
+          let { content, embeds, channel_id: channelId, attachments } = message.d;
+          const {
+            avatar, username, id, discriminator,
+          } = message.d.author;
+          const avatarUrl = `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`;
+          let webhookUrl = serverMap[channelId];
+
+          if (webhookUrl === undefinedWebhookUrl) {
+            console.log('[', new Date(Date.now())
+                .toLocaleString('ru-Ru', options), '] i havent found webhook for channelId: ', channelId);
+            webhookUrl = unfilteredWebhookUrl;
+            await sendErrorToDiscord(`I havent found webhook for channelId: ${channelId}`);
+          }
+
+          //если отправляется изображение
+          if (attachments.length > 0 && attachments[0].url) {
+            content = content + '\n' + attachments[0].url;
+          }
+
+          const hookContent: WebhookConfig = {
+            content,
+            embeds,
+            username: `${username}#${discriminator}`,
+            url: webhookUrl,
+            avatar: avatarUrl,
+          };
+
+          try {
+            await executeWebhook(hookContent);
+          } catch (e) {
+            console.log('[', new Date(Date.now())
+                .toLocaleString('ru-Ru', options), '] Message: ', message);
+            //send error to ds channel
+            await sendErrorToDiscord(e || 'There is error with sending 0 case webhook.');
+          }
         }
         break;
 
