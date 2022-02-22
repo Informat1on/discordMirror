@@ -5,7 +5,7 @@ dotenv.config();
 const {
   DISCORD_TOKEN: discordToken,
   MAIN_SERVER_ID: mainServerId,
-  SECOND_SERVER_ID: secondServerId,
+  // SECOND_SERVER_ID: secondServerId,
   ERROR_WEBHOOK_URL: errorWebhookUrl,
   UNFILTERED_WEBHOOK_URL: unfilteredWebhookUrl,
   UNDEFINED_WEBHOOK_URL: undefinedWebhookUrl,
@@ -20,7 +20,7 @@ const headers = {
 export {
   discordToken,
   mainServerId,
-  secondServerId,
+  // secondServerId,
   headers,
   errorWebhookUrl,
   unfilteredWebhookUrl,
