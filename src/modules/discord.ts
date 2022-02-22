@@ -115,8 +115,10 @@ export const listen = async (): Promise<void> => {
           try {
             await executeWebhook(hookContent);
           } catch (e) {
+            console.log('[', new Date(Date.now())
+                .toLocaleString('ru-Ru', options), '] Message: ', message);
             //send error to ds channel
-            await sendErrorToDiscord(e.statusText || 'There is error with sending webhook.');
+            await sendErrorToDiscord(e || 'There is error with sending 0 case webhook.');
           }
         }
         break;
@@ -151,10 +153,6 @@ export const listen = async (): Promise<void> => {
           d: message.s,
         };
         socket.send(JSON.stringify(messageClockPayload));
-
-        setInterval(() => {
-          socket.send(JSON.stringify(messageClockPayload));
-        }, message.d.heartbeat_interval);
         break;
 
       // 9 - Invalid Session
@@ -205,7 +203,7 @@ export const listen = async (): Promise<void> => {
           await sendInfoToDiscord(message);
         } catch (e) {
           //send error to ds channel
-          await sendErrorToDiscord(e.op || 'There is error with sending webhook.');
+          await sendErrorToDiscord(e.op || 'There is error with sending default case webhook.');
         }
         break;
     }
