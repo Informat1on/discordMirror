@@ -152,9 +152,9 @@ export const listen = async (): Promise<void> => {
         };
         socket.send(JSON.stringify(messageClockPayload));
 
-        // setInterval(() => {
-        //   socket.send(JSON.stringify(messageClockPayload));
-        // }, message.d.heartbeat_interval);
+        setInterval(() => {
+          socket.send(JSON.stringify(messageClockPayload));
+        }, message.d.heartbeat_interval);
         break;
 
       // 9 - Invalid Session
