@@ -79,82 +79,12 @@ export const listen = async (): Promise<void> => {
 
     switch (message.op) {
 
-      // 2 - Ready(Only receive). Complete Websocket handshake.
-      // case 2:
-      //   console.log('Message from ready is: ', message);
-      //   socket.send(JSON.stringify({
-      //     v: 9,
-      //     user: "",
-      //     guilds: "",
-      //     session_id: sessionId,
-      //     application: "",
-      //   }));
-      //   break;
-
-      // 7 - Reconnect. We should try to reconnect.
-      case 7:
-        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Reconnecting..');
-        await sendInfoToDiscord('Reconnecting..');
-        // session_id - takes from ready
-        // seq - last sequence number received
-        const payload = {
-          op: 6,
-          d: {
-            token: discordToken,
-            session_id: sessionId,
-            seq: sequenceNumber,
-          },
-        }
-        socket.send(JSON.stringify(payload));
-        break;
-
-      // 9 - Invalid Session
-      case 9:
-        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Invalid session');
-        await sendErrorToDiscord('Invalid session');
-        break;
-
-      // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
-      // 10 - Hello
-      case 10:
-        const messagePayload = {
-          op: 1,
-          d: message.s,
-        };
-        socket.send(JSON.stringify(messagePayload));
-
-        setInterval(() => {
-          socket.send(JSON.stringify(messagePayload));
-        }, message.d.heartbeat_interval);
-        break;
-
-      // 11 - Heartbeat ACK
-      case 11:
-        if (!authenticated) {
-          const payload = {
-            op: 2,
-            intents: 513,
-            d: {
-              token: discordToken,
-              properties: {
-                $os: 'linux',
-                $browser: 'test',
-                $device: 'test',
-              },
-            },
-          }
-          socket.send(JSON.stringify(payload));
-          authenticated = true;
-        }
-        break;
-
       // 0 - Dispatch
       case 0:
+        sequenceNumber = message.s;
         if (
-            message.t === 'MESSAGE_CREATE' &&
-            (message.d.guild_id === mainServerId)
+            message.t === 'MESSAGE_CREATE' && message.d.guild_id === mainServerId
         ) {
-          sequenceNumber = message.s;
           let { content, embeds, channel_id: channelId, attachments } = message.d;
           const {
             avatar, username, id, discriminator,
@@ -191,6 +121,82 @@ export const listen = async (): Promise<void> => {
         }
         break;
 
+      // 1 - Heartbeat
+      case 1:
+        let heartBeatPayload = {
+          op: 1,
+          d: message.s,
+        };
+        socket.send(JSON.stringify(heartBeatPayload));
+        break;
+
+      // 7 - Reconnect. We should try to reconnect.
+      case 7:
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Reconnecting..');
+        await sendInfoToDiscord('Reconnecting..');
+        // session_id - takes from ready
+        // seq - last sequence number received
+        const payload = {
+          op: 6,
+          d: {
+            token: discordToken,
+            session_id: sessionId,
+            seq: sequenceNumber,
+          },
+        }
+        socket.send(JSON.stringify(payload));
+        // starting to clock
+        const messageClockPayload = {
+          op: 1,
+          d: message.s,
+        };
+        socket.send(JSON.stringify(messageClockPayload));
+
+        setInterval(() => {
+          socket.send(JSON.stringify(messageClockPayload));
+        }, message.d.heartbeat_interval);
+        break;
+
+      // 9 - Invalid Session
+      case 9:
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Invalid session');
+        await sendErrorToDiscord('Invalid session');
+        break;
+
+      // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
+      // 10 - Hello
+      case 10:
+        const messagePayload = {
+          op: 1,
+          d: message.s,
+        };
+        socket.send(JSON.stringify(messagePayload));
+
+        setInterval(() => {
+          socket.send(JSON.stringify(messagePayload));
+        }, message.d.heartbeat_interval);
+        break;
+
+      // 11 - Heartbeat ACK
+      case 11:
+        if (!authenticated) {
+          const payload = {
+            op: 2,
+            d: {
+              token: discordToken,
+              intents: 513,
+              properties: {
+                $os: 'linux',
+                $browser: 'test',
+                $device: 'test',
+              },
+            },
+          }
+          socket.send(JSON.stringify(payload));
+          authenticated = true;
+        }
+        break;
+
       default:
         // if havent found case, it sends message to DS
         console.log('[', new Date(Date.now())
@@ -206,7 +212,8 @@ export const listen = async (): Promise<void> => {
   });
 
   socket.on('ready', async (data: Websocket.Data) =>{
-    console.log('data from ready is: ', data);
+    const message = JSON.parse(data.toString());
+    console.log('data from ready is: ', message);
   });
 };
 
