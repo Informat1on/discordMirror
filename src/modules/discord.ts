@@ -120,7 +120,7 @@ export const listen = async (): Promise<void> => {
             //send error to ds channel
             await sendErrorToDiscord( 'There is error with sending 0 case webhook.');
             console.log('[', new Date(Date.now())
-                .toLocaleString('ru-Ru', options), '] I continue to work.', message);
+                .toLocaleString('ru-Ru', options), '] I continue to work.');
           }
         } else if (message.t === 'READY') {
           sessionId = message.d.session_id;
