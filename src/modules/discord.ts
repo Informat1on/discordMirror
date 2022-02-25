@@ -14,7 +14,6 @@ import {
   errorWebhookUrl,
   unfilteredWebhookUrl,
   undefinedWebhookUrl,
-  sessionId,
 } from '../util/env';
 import { Webhook } from "webhook-discord";
 
@@ -23,6 +22,7 @@ const options = {
   hour: 'numeric', minute: 'numeric', second: 'numeric',
   hour12: false
 };
+let sessionId:string;
 
 export const createWebhook = async (channelId: string): Promise<string> => fetch(`https://discord.com/api/v8/channels/${channelId}/webhooks`, {
   method: 'POST',
@@ -118,8 +118,14 @@ export const listen = async (): Promise<void> => {
             console.log('[', new Date(Date.now())
                 .toLocaleString('ru-Ru', options), '] Message: ', message);
             //send error to ds channel
-            await sendErrorToDiscord(e || 'There is error with sending 0 case webhook.');
+            await sendErrorToDiscord( 'There is error with sending 0 case webhook.');
+            console.log('[', new Date(Date.now())
+                .toLocaleString('ru-Ru', options), '] I continue to work.', message);
           }
+        } else if (message.t === 'READY') {
+          sessionId = message.d.session_id;
+          console.log('[', new Date(Date.now())
+              .toLocaleString('ru-Ru', options), '] Im ready! Session id: ', sessionId);
         }
         break;
 
