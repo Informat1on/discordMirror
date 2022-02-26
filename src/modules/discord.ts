@@ -9,7 +9,7 @@ import {
 import {
   discordToken,
   mainServerId,
-  // secondServerId,
+  secondServerId,
   headers,
   errorWebhookUrl,
   unfilteredWebhookUrl,
@@ -83,7 +83,7 @@ export const listen = async (): Promise<void> => {
       case 0:
         sequenceNumber = message.s;
         if (
-            message.t === 'MESSAGE_CREATE' && (message.d.guild_id === mainServerId)
+            message.t === 'MESSAGE_CREATE' && (message.d.guild_id === mainServerId || message.d.guild_id === secondServerId)
         ) {
           let { content, embeds, channel_id: channelId, attachments } = message.d;
           const {
