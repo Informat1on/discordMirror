@@ -146,12 +146,23 @@ export const listen = async (): Promise<void> => {
         authenticated = false;
         // session_id - takes from ready
         // seq - last sequence number received
+        // const payload = {
+        //   op: 6,
+        //   d: {
+        //     token: discordToken,
+        //     session_id: sessionId,
+        //     seq: sequenceNumber,
+        //   },
+        // }
         const payload = {
-          op: 6,
+          op: 2,
           d: {
             token: discordToken,
-            session_id: sessionId,
-            seq: sequenceNumber,
+            properties: {
+              $os: 'linux',
+              $browser: 'test',
+              $device: 'test',
+            },
           },
         }
         socket.send(JSON.stringify(payload));
