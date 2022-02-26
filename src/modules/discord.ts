@@ -143,6 +143,7 @@ export const listen = async (): Promise<void> => {
       case 7:
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Reconnecting..');
         await sendInfoToDiscord('Reconnecting..');
+        authenticated = false;
         // session_id - takes from ready
         // seq - last sequence number received
         const payload = {
@@ -155,17 +156,33 @@ export const listen = async (): Promise<void> => {
         }
         socket.send(JSON.stringify(payload));
         // starting to clock
-        const messageClockPayload = {
-          op: 1,
-          d: message.s,
-        };
-        socket.send(JSON.stringify(messageClockPayload));
+        // const messageClockPayload = {
+        //   op: 1,
+        //   d: message.s,
+        // };
+        // socket.send(JSON.stringify(messageClockPayload));
         break;
 
       // 9 - Invalid Session
       case 9:
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Invalid session');
         await sendErrorToDiscord('Invalid session');
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Reconnecting after invalid session..');
+        await sendInfoToDiscord('Reconnecting after invalid session..');
+        // session_id - takes from ready
+        // seq - last sequence number received
+        const invalidSessionPayload = {
+        op: 2,
+        d: {
+          token: discordToken,
+          properties: {
+            $os: 'linux',
+            $browser: 'test',
+            $device: 'test',
+          },
+        },
+      }
+        socket.send(JSON.stringify(invalidSessionPayload));
         break;
 
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
