@@ -166,12 +166,14 @@ export const listen = async (): Promise<void> => {
           },
         }
         socket.send(JSON.stringify(payload));
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Clocking');
         // starting to clock
-        // const messageClockPayload = {
-        //   op: 1,
-        //   d: message.s,
-        // };
-        // socket.send(JSON.stringify(messageClockPayload));
+        const messageClockPayload = {
+          op: 1,
+          d: message.s,
+        };
+        socket.send(JSON.stringify(messageClockPayload));
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Sent clock');
         break;
 
       // 9 - Invalid Session
