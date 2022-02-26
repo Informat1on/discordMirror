@@ -188,6 +188,8 @@ export const listen = async (): Promise<void> => {
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
       // 10 - Hello
       case 10:
+        console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Hello!');
+        await sendInfoToDiscord('Hello!');
         const messagePayload = {
           op: 1,
           d: message.s,
