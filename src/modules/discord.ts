@@ -173,7 +173,11 @@ export const listen = async (): Promise<void> => {
             "] Im ready! Session id: ",
             sessionId
           );
-        } else {
+        } else if (
+          message.t === "RESUMED" ||
+          message.t === "RECONNECT" ||
+          message.t === "INVALID_SESSION"
+        ) {
           console.log("Its new event in 0 case: ", message.t);
           console.log("message body is: ", message);
         }
