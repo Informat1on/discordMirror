@@ -22,7 +22,8 @@ const options = {
   hour: 'numeric', minute: 'numeric', second: 'numeric',
   hour12: false
 };
-let sessionId:string;
+let sessionId: string;
+let heartBeatTiming: number;
 
 export const createWebhook = async (channelId: string): Promise<string> => fetch(`https://discord.com/api/v8/channels/${channelId}/webhooks`, {
   method: 'POST',
@@ -127,9 +128,10 @@ export const listen = async (): Promise<void> => {
           sessionId = message.d.session_id;
           console.log('[', new Date(Date.now())
               .toLocaleString('ru-Ru', options), '] Im ready! Session id: ', sessionId);
-        } 
+        }
         else {
-            
+          console.log('Its new event in 0 case: ', message.t);
+          console.log('message body is: ', message);
         }
         break;
 
@@ -166,7 +168,7 @@ export const listen = async (): Promise<void> => {
               $os: 'linux',
               $browser: 'test',
               $device: 'test',
-            },console.log(hello world)
+            },
           },
         }
         socket.send(JSON.stringify(payload));
@@ -176,11 +178,14 @@ export const listen = async (): Promise<void> => {
           op: 1,
           d: message.s,
         };
-        socket.send(JSON.stringify(messageClockPayload));
+        // socket.send(JSON.stringify(messageClockPayload));
+        setInterval(() => {
+          socket.send(JSON.stringify(messageClockPayload));
+        }, message.d.heartbeat_interval);
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Sent clock');
         break;
 
-      // 9 - Invalid Sessions
+      // 9 - Invalid Session
       case 9:
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Invalid session');
         await sendErrorToDiscord('Invalid session');
@@ -205,6 +210,7 @@ export const listen = async (): Promise<void> => {
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
       // 10 - Hello
       case 10:
+        heartBeatTiming = message.d.heartbeat_interval;
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Hello!');
         await sendInfoToDiscord('Hello!');
         const messagePayload = {
@@ -239,6 +245,8 @@ export const listen = async (): Promise<void> => {
 
       default:
         // if havent found case, it sends message to DS
+        console.log('[', new Date(Date.now())
+            .toLocaleString('ru-Ru', options), '] Default case got. Please check message below.: ');
         console.log('[', new Date(Date.now())
             .toLocaleString('ru-Ru', options), '] Message: ', message);
         try {
