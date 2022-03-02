@@ -81,10 +81,10 @@ export const listen = async (): Promise<void> => {
 
       // 0 - Dispatch
       case 0:
-        sequenceNumber = message.s;
         if (
             message.t === 'MESSAGE_CREATE' && (message.d.guild_id === mainServerId || message.d.guild_id === secondServerId)
         ) {
+          sequenceNumber = message.s;
           let { content, embeds, channel_id: channelId, attachments } = message.d;
           const {
             avatar, username, id, discriminator,
@@ -122,10 +122,14 @@ export const listen = async (): Promise<void> => {
             console.log('[', new Date(Date.now())
                 .toLocaleString('ru-Ru', options), '] I continue to work.');
           }
-        } else if (message.t === 'READY') {
+        }
+        else if (message.t === 'READY') {
           sessionId = message.d.session_id;
           console.log('[', new Date(Date.now())
               .toLocaleString('ru-Ru', options), '] Im ready! Session id: ', sessionId);
+        } 
+        else {
+            
         }
         break;
 
@@ -143,7 +147,7 @@ export const listen = async (): Promise<void> => {
       case 7:
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Reconnecting..');
         await sendInfoToDiscord('Reconnecting..');
-        authenticated = false;
+        // authenticated = false;
         // session_id - takes from ready
         // seq - last sequence number received
         // const payload = {
@@ -162,7 +166,7 @@ export const listen = async (): Promise<void> => {
               $os: 'linux',
               $browser: 'test',
               $device: 'test',
-            },
+            },console.log(hello world)
           },
         }
         socket.send(JSON.stringify(payload));
@@ -176,7 +180,7 @@ export const listen = async (): Promise<void> => {
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Sent clock');
         break;
 
-      // 9 - Invalid Session
+      // 9 - Invalid Sessions
       case 9:
         console.log('[', new Date(Date.now()).toLocaleString('ru-Ru', options), '] Invalid session');
         await sendErrorToDiscord('Invalid session');
