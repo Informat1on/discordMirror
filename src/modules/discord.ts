@@ -76,8 +76,12 @@ export const createChannel = async (
 
 export const listen = async (): Promise<void> => {
   const serverMap = jsonfile.readFileSync("./map.json");
-  let socket: Websocket | null = new Websocket(
-    "wss://gateway.discord.gg/?v=9&encoding=json"
+  let socket = new Websocket("wss://gateway.discord.gg/?v=9&encoding=json");
+  console.log(
+      "[",
+      new Date(Date.now()).toLocaleString("ru-Ru", options),
+      "] Socket loaded as",
+      socket,
   );
   let authenticated = false;
   let sequenceNumber: number;
@@ -191,7 +195,7 @@ export const listen = async (): Promise<void> => {
           op: 1,
           d: message.s,
         };
-        socket!.send(JSON.stringify(heartBeatPayload));
+        socket.send(JSON.stringify(heartBeatPayload));
         break;
 
       // 7 - Reconnect. We should try to reconnect.
@@ -204,17 +208,6 @@ export const listen = async (): Promise<void> => {
           "] Reconnecting.."
         );
         await sendInfoToDiscord("Reconnecting..");
-        // authenticated = false;
-        // session_id - takes from ready
-        // seq - last sequence number received
-        // const payload = {
-        //   op: 6,
-        //   d: {
-        //     token: discordToken,
-        //     session_id: sessionId,
-        //     seq: sequenceNumber,
-        //   },
-        // }
         const payload = {
           op: 2,
           d: {
@@ -226,33 +219,19 @@ export const listen = async (): Promise<void> => {
             },
           },
         };
-        socket!.send(JSON.stringify(payload));
+        socket.send(JSON.stringify(payload));
         // im closing socket
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
           "] Closing."
         );
-        socket!.close(1000, "Received retry");
+        socket.close(1000, "Received retry");
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
           "] Closed."
         );
-        // starting to clock
-        // const messageClockPayload = {
-        //   op: 1,
-        //   d: message.s,
-        // };
-        // socket.send(JSON.stringify(messageClockPayload));
-        // setInterval(() => {
-        //   socket.send(JSON.stringify(messageClockPayload));
-        // }, heartBeatTiming);
-        // console.log(
-        //   "[",
-        //   new Date(Date.now()).toLocaleString("ru-Ru", options),
-        //   "] Sent clock"
-        // );
         break;
 
       // 9 - Invalid Session
@@ -282,7 +261,7 @@ export const listen = async (): Promise<void> => {
             },
           },
         };
-        socket!.send(JSON.stringify(invalidSessionPayload));
+        socket.send(JSON.stringify(invalidSessionPayload));
         break;
 
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
@@ -299,10 +278,10 @@ export const listen = async (): Promise<void> => {
           op: 1,
           d: message.s,
         };
-        socket!.send(JSON.stringify(messagePayload));
+        socket.send(JSON.stringify(messagePayload));
 
         setInterval(() => {
-          socket!.send(JSON.stringify(messagePayload));
+          socket.send(JSON.stringify(messagePayload));
         }, message.d.heartbeat_interval);
         break;
 
@@ -320,7 +299,7 @@ export const listen = async (): Promise<void> => {
               },
             },
           };
-          socket!.send(JSON.stringify(payload));
+          socket.send(JSON.stringify(payload));
           authenticated = true;
         }
         break;
@@ -362,7 +341,6 @@ export const listen = async (): Promise<void> => {
       "] Im closing. On close."
     );
     console.log(event);
-    socket = null;
     console.log(
       "[",
       new Date(Date.now()).toLocaleString("ru-Ru", options),
