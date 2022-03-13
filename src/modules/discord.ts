@@ -152,8 +152,8 @@ export const listen = async (): Promise<void> => {
             console.log(
               "[",
               new Date(Date.now()).toLocaleString("ru-Ru", options),
-              "] Message: ",
-              message
+              "] There is error with sending 0 case webhook. Prob missing channel with id:  ",
+              message.d.channel_id
             );
             // send error to ds channel
             await sendErrorToDiscord(
@@ -194,6 +194,8 @@ export const listen = async (): Promise<void> => {
 
       // 7 - Reconnect. We should try to reconnect.
       case 7:
+        // TODO:
+        // here i can just return and back to index.ts
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
@@ -223,25 +225,27 @@ export const listen = async (): Promise<void> => {
           },
         };
         socket.send(JSON.stringify(payload));
+        // im closing socket
+        socket.close(1000, "Received retry");
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Clocking"
+          "] Closing"
         );
         // starting to clock
-        const messageClockPayload = {
-          op: 1,
-          d: message.s,
-        };
+        // const messageClockPayload = {
+        //   op: 1,
+        //   d: message.s,
+        // };
         // socket.send(JSON.stringify(messageClockPayload));
-        setInterval(() => {
-          socket.send(JSON.stringify(messageClockPayload));
-        }, message.d.heartbeat_interval);
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Sent clock"
-        );
+        // setInterval(() => {
+        //   socket.send(JSON.stringify(messageClockPayload));
+        // }, heartBeatTiming);
+        // console.log(
+        //   "[",
+        //   new Date(Date.now()).toLocaleString("ru-Ru", options),
+        //   "] Sent clock"
+        // );
         break;
 
       // 9 - Invalid Session
@@ -343,6 +347,15 @@ export const listen = async (): Promise<void> => {
     const message = JSON.parse(data.toString());
     console.log("data from ready is: ", message);
   });
+
+  socket.onclose = (event) => {
+    console.log(
+      "[",
+      new Date(Date.now()).toLocaleString("ru-Ru", options),
+      "] Im closing. "
+    );
+    console.log(event);
+  };
 };
 
 export const getChannels = async (): Promise<Channel[]> =>
