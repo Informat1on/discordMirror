@@ -76,7 +76,9 @@ export const createChannel = async (
 
 export const listen = async (): Promise<void> => {
   const serverMap = jsonfile.readFileSync("./map.json");
-  const socket = new Websocket("wss://gateway.discord.gg/?v=9&encoding=json");
+  let socket: Websocket | null = new Websocket(
+    "wss://gateway.discord.gg/?v=9&encoding=json"
+  );
   let authenticated = false;
   let sequenceNumber: number;
 
@@ -189,7 +191,7 @@ export const listen = async (): Promise<void> => {
           op: 1,
           d: message.s,
         };
-        socket.send(JSON.stringify(heartBeatPayload));
+        socket?.send(JSON.stringify(heartBeatPayload));
         break;
 
       // 7 - Reconnect. We should try to reconnect.
@@ -224,14 +226,14 @@ export const listen = async (): Promise<void> => {
             },
           },
         };
-        socket.send(JSON.stringify(payload));
+        socket?.send(JSON.stringify(payload));
         // im closing socket
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
           "] Closing."
         );
-        socket.close(1000, "Received retry");
+        socket?.close(1000, "Received retry");
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
@@ -280,7 +282,7 @@ export const listen = async (): Promise<void> => {
             },
           },
         };
-        socket.send(JSON.stringify(invalidSessionPayload));
+        socket?.send(JSON.stringify(invalidSessionPayload));
         break;
 
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
@@ -297,10 +299,10 @@ export const listen = async (): Promise<void> => {
           op: 1,
           d: message.s,
         };
-        socket.send(JSON.stringify(messagePayload));
+        socket?.send(JSON.stringify(messagePayload));
 
         setInterval(() => {
-          socket.send(JSON.stringify(messagePayload));
+          socket?.send(JSON.stringify(messagePayload));
         }, message.d.heartbeat_interval);
         break;
 
@@ -318,7 +320,7 @@ export const listen = async (): Promise<void> => {
               },
             },
           };
-          socket.send(JSON.stringify(payload));
+          socket?.send(JSON.stringify(payload));
           authenticated = true;
         }
         break;
@@ -357,16 +359,23 @@ export const listen = async (): Promise<void> => {
     console.log(
       "[",
       new Date(Date.now()).toLocaleString("ru-Ru", options),
-      "] Im closing. "
+      "] Im closing. On close."
     );
     console.log(event);
+    socket = null;
+    console.log(
+      "[",
+      new Date(Date.now()).toLocaleString("ru-Ru", options),
+      "] Waiting 5 sec for restart."
+    );
+    setTimeout(listen, 5000);
   };
 
   socket.on("close", (event) => {
     console.log(
       "[",
       new Date(Date.now()).toLocaleString("ru-Ru", options),
-      "] Im closing. "
+      "] Im closing. Its socket.on "
     );
     console.log(event);
   });
