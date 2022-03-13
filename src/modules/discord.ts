@@ -226,11 +226,16 @@ export const listen = async (): Promise<void> => {
         };
         socket.send(JSON.stringify(payload));
         // im closing socket
+        console.log(
+          "[",
+          new Date(Date.now()).toLocaleString("ru-Ru", options),
+          "] Closing."
+        );
         socket.close(1000, "Received retry");
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Closing"
+          "] Closed."
         );
         // starting to clock
         // const messageClockPayload = {
@@ -356,6 +361,15 @@ export const listen = async (): Promise<void> => {
     );
     console.log(event);
   };
+
+  socket.on("close", (event) => {
+    console.log(
+      "[",
+      new Date(Date.now()).toLocaleString("ru-Ru", options),
+      "] Im closing. "
+    );
+    console.log(event);
+  });
 };
 
 export const getChannels = async (): Promise<Channel[]> =>
