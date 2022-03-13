@@ -191,7 +191,7 @@ export const listen = async (): Promise<void> => {
           op: 1,
           d: message.s,
         };
-        socket?.send(JSON.stringify(heartBeatPayload));
+        socket!.send(JSON.stringify(heartBeatPayload));
         break;
 
       // 7 - Reconnect. We should try to reconnect.
@@ -226,14 +226,14 @@ export const listen = async (): Promise<void> => {
             },
           },
         };
-        socket?.send(JSON.stringify(payload));
+        socket!.send(JSON.stringify(payload));
         // im closing socket
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
           "] Closing."
         );
-        socket?.close(1000, "Received retry");
+        socket!.close(1000, "Received retry");
         console.log(
           "[",
           new Date(Date.now()).toLocaleString("ru-Ru", options),
@@ -282,7 +282,7 @@ export const listen = async (): Promise<void> => {
             },
           },
         };
-        socket?.send(JSON.stringify(invalidSessionPayload));
+        socket!.send(JSON.stringify(invalidSessionPayload));
         break;
 
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
@@ -299,10 +299,10 @@ export const listen = async (): Promise<void> => {
           op: 1,
           d: message.s,
         };
-        socket?.send(JSON.stringify(messagePayload));
+        socket!.send(JSON.stringify(messagePayload));
 
         setInterval(() => {
-          socket?.send(JSON.stringify(messagePayload));
+          socket!.send(JSON.stringify(messagePayload));
         }, message.d.heartbeat_interval);
         break;
 
@@ -320,7 +320,7 @@ export const listen = async (): Promise<void> => {
               },
             },
           };
-          socket?.send(JSON.stringify(payload));
+          socket!.send(JSON.stringify(payload));
           authenticated = true;
         }
         break;
