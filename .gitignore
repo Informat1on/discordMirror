@@ -4,4 +4,4 @@
 /dist
 .env
 map.json
-/src/logs/*
+.log
