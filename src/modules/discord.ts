@@ -202,8 +202,8 @@ export async function listen(): Promise<void> {
   });
 
   socket.onclose = (event) => {
-    // console.log(event);
-    consLog('Waiting 5 sec for restart...');
-    setTimeout(listen, 5000);
+    consLog(`Close event is: ${event}`);
+    consLog('Waiting 6 sec for restart...');
+    setTimeout(listen, 6000);
   };
 }
