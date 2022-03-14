@@ -1,107 +1,33 @@
 import Websocket from "ws";
 import jsonfile from "jsonfile";
-import fetch, { Response } from "node-fetch";
-import { Channel, Guild, WebhookConfig } from "../interfaces/interfaces";
+import { WebhookConfig } from "../interfaces/interfaces";
 import {
   discordToken,
   mainServerId,
   secondServerId,
-  headers,
-  errorWebhookUrl,
   unfilteredWebhookUrl,
   undefinedWebhookUrl,
 } from "../util/env";
-import { Webhook } from "webhook-discord";
+import { executeWebhook, sendErrorToDiscord, sendInfoToDiscord } from "./webhook";
+import { consLog } from "../util/console";
 
-const options = {
-  year: "numeric",
-  month: "numeric",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  second: "numeric",
-  hour12: false,
-};
-let sessionId: string;
-let heartBeatTiming: number;
-
-export const createWebhook = async (channelId: string): Promise<string> =>
-  fetch(`https://discord.com/api/v8/channels/${channelId}/webhooks`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      name: channelId,
-    }),
-  })
-    .then((res) => res.json())
-    .then(
-      (json) => `https://discord.com/api/v8/webhooks/${json.id}/${json.token}`
-    );
-
-export const executeWebhook = async ({
-  content,
-  embeds,
-  username,
-  url,
-  avatar,
-}: WebhookConfig): Promise<Response> =>
-  fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      content,
-      embeds,
-      username,
-      avatar_url: avatar,
-    }),
-  });
-
-export const createChannel = async (
-  name: string,
-  pos: number,
-  newId: string,
-  parentId?: string
-): Promise<Channel> =>
-  fetch(`https://discord.com/api/v8/guilds/${newId}/channels`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      name,
-      parent_id: parentId,
-      position: pos,
-    }),
-  }).then((res) => res.json());
-
-export const listen = async (): Promise<void> => {
+export async function listen(): Promise<void> {
   const serverMap = jsonfile.readFileSync("./map.json");
   let socket = new Websocket("wss://gateway.discord.gg/?v=9&encoding=json");
-  console.log(
-      "[",
-      new Date(Date.now()).toLocaleString("ru-Ru", options),
-      "] Socket loaded as",
-      socket,
-  );
   let authenticated = false;
   let sequenceNumber: number;
+  let sessionId: string;
 
-  // if no servers loaded
+  consLog(`Socket loaded: ${!!socket}`);
+
+  // if no servers loaded - exit
   if (!serverMap) {
     return;
   }
-  console.log(
-    "[",
-    new Date(Date.now()).toLocaleString("ru-Ru", options),
-    "] Channel webhooks loaded"
-  );
+  consLog('Channel webhooks loaded');
 
   socket.on("open", () => {
-    console.log(
-      "[",
-      new Date(Date.now()).toLocaleString("ru-Ru", options),
-      "] Connected to Discord API"
-    );
+    consLog('Connected to Discord API');
   });
 
   socket.on("message", async (data: Websocket.Data) => {
@@ -127,12 +53,7 @@ export const listen = async (): Promise<void> => {
           let webhookUrl = serverMap[channelId];
 
           if (webhookUrl === undefinedWebhookUrl) {
-            console.log(
-              "[",
-              new Date(Date.now()).toLocaleString("ru-Ru", options),
-              "] i havent found webhook for channelId: ",
-              channelId
-            );
+            consLog(`I havent found webhook for channelId: ${channelId}`);
             webhookUrl = unfilteredWebhookUrl;
             await sendErrorToDiscord(
               `I havent found webhook for channelId: ${channelId}`
@@ -155,30 +76,16 @@ export const listen = async (): Promise<void> => {
           try {
             await executeWebhook(hookContent);
           } catch (e) {
-            console.log(
-              "[",
-              new Date(Date.now()).toLocaleString("ru-Ru", options),
-              "] There is error with sending 0 case webhook. Prob missing channel with id:  ",
-              message.d.channel_id
-            );
+            consLog(`There is error with sending 0 case webhook. Prob missing channel with id: ${message.d.channel_id}`);
             // send error to ds channel
             await sendErrorToDiscord(
               "There is error with sending 0 case webhook."
             );
-            console.log(
-              "[",
-              new Date(Date.now()).toLocaleString("ru-Ru", options),
-              "] I continue to work."
-            );
+            consLog('I continue to work.');
           }
         } else if (message.t === "READY") {
           sessionId = message.d.session_id;
-          console.log(
-            "[",
-            new Date(Date.now()).toLocaleString("ru-Ru", options),
-            "] Im ready! Session id: ",
-            sessionId
-          );
+          consLog(`Im ready! Session id: ${sessionId}`);
         } else if (
           message.t === "RESUMED" ||
           message.t === "RECONNECT" ||
@@ -201,12 +108,7 @@ export const listen = async (): Promise<void> => {
       // 7 - Reconnect. We should try to reconnect.
       case 7:
         // TODO:
-        // here i can just return and back to index.ts
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Reconnecting.."
-        );
+        consLog('Reconnecting...');
         await sendInfoToDiscord("Reconnecting..");
         const payload = {
           op: 2,
@@ -221,32 +123,16 @@ export const listen = async (): Promise<void> => {
         };
         socket.send(JSON.stringify(payload));
         // im closing socket
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Closing."
-        );
+        consLog('Closing the socket...');
         socket.close(1000, "Received retry");
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Closed."
-        );
+        consLog('Socket closed.');
         break;
 
       // 9 - Invalid Session
       case 9:
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Invalid session"
-        );
+        consLog('Invalid session');
         await sendErrorToDiscord("Invalid session");
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Reconnecting after invalid session.."
-        );
+        consLog('Reconnecting after invalid session...');
         await sendInfoToDiscord("Reconnecting after invalid session..");
         // session_id - takes from ready
         // seq - last sequence number received
@@ -267,12 +153,7 @@ export const listen = async (): Promise<void> => {
       // Once connected, client(Me) immediately receive opcode 10 with heartbeatInterval
       // 10 - Hello
       case 10:
-        heartBeatTiming = message.d.heartbeat_interval;
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Hello!"
-        );
+        consLog('Hello!');
         await sendInfoToDiscord("Hello!");
         const messagePayload = {
           op: 1,
@@ -306,17 +187,8 @@ export const listen = async (): Promise<void> => {
 
       default:
         // if havent found case, it sends message to DS
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Default case got. Please check message below.: "
-        );
-        console.log(
-          "[",
-          new Date(Date.now()).toLocaleString("ru-Ru", options),
-          "] Message: ",
-          message
-        );
+        consLog('Default case got. Please check message below: ');
+        consLog(`Message: ${message}`);
         try {
           await sendInfoToDiscord(message);
         } catch (e) {
@@ -329,114 +201,9 @@ export const listen = async (): Promise<void> => {
     }
   });
 
-  socket.on("ready", async (data: Websocket.Data) => {
-    const message = JSON.parse(data.toString());
-    console.log("data from ready is: ", message);
-  });
-
   socket.onclose = (event) => {
-    console.log(
-      "[",
-      new Date(Date.now()).toLocaleString("ru-Ru", options),
-      "] Im closing. On close."
-    );
-    console.log(event);
-    console.log(
-      "[",
-      new Date(Date.now()).toLocaleString("ru-Ru", options),
-      "] Waiting 5 sec for restart."
-    );
+    // console.log(event);
+    consLog('Waiting 5 sec for restart...');
     setTimeout(listen, 5000);
   };
-
-  socket.on("close", (event) => {
-    console.log(
-      "[",
-      new Date(Date.now()).toLocaleString("ru-Ru", options),
-      "] Im closing. Its socket.on "
-    );
-    console.log(event);
-  });
-};
-
-export const getChannels = async (): Promise<Channel[]> =>
-  fetch(`https://discord.com/api/v8/guilds/${mainServerId}/channels`, {
-    method: "GET",
-    headers,
-  })
-    .then((res) => res.json())
-    .then((json: Channel[]) => json);
-
-export const createServer = async (channels: Channel[]): Promise<void> => {
-  console.log("Creating mirror server...");
-  const cleanedChannels = channels.map(
-    ({ id, parent_id, guild_id, last_message_id, ...rest }) => rest
-  );
-  const categories = cleanedChannels.filter((channel) => channel.type === 4);
-  const body = {
-    name: "mirror",
-    channels: categories,
-  };
-  const serverMap = new Map();
-  const serverResp: Response = await fetch(
-    "https://discord.com/api/v8/guilds",
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    }
-  );
-  const server: Guild = await serverResp.json();
-  const newId = server.id;
-
-  serverMap.set("serverId", newId);
-
-  const channelResp = await fetch(
-    `https://discord.com/api/v8/guilds/${newId}/channels`,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: discordToken!,
-      },
-    }
-  );
-
-  const serverChannels: Channel[] = await channelResp.json();
-
-  return new Promise(async (resolve) => {
-    for (const channel of channels) {
-      if (channel.parent_id && channel.type !== 2) {
-        const parentChannel = channels.find(
-          (chan) => chan.id === channel.parent_id
-        );
-        if (parentChannel) {
-          const newParentChannel = serverChannels.find(
-            (chan) => chan.name === parentChannel.name
-          );
-          if (newParentChannel) {
-            const newChannel = await createChannel(
-              channel.name,
-              channel.position,
-              newId,
-              newParentChannel.id
-            );
-            const newWebhook = await createWebhook(newChannel.id);
-            serverMap.set(channel.id, newWebhook);
-          }
-        }
-      }
-    }
-    jsonfile.writeFileSync("./map.json", Object.fromEntries(serverMap));
-    resolve();
-  });
-};
-
-async function sendErrorToDiscord(exceptionText: string): Promise<void> {
-  const webhook = new Webhook(errorWebhookUrl!);
-  webhook.err("Error", exceptionText);
-}
-
-async function sendInfoToDiscord(messageText: string): Promise<void> {
-  const webhook = new Webhook(errorWebhookUrl!);
-  webhook.info("Error", messageText);
 }

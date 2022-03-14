@@ -1,5 +1,7 @@
 import fs from "fs";
-import { listen, createServer, getChannels } from "./modules/discord";
+import { listen } from "./modules/discord";
+import { getChannels } from "./modules/channel";
+import { createServer } from "./modules/server";
 
 // if mirror server exists
 // TODO: Сделать проверку на полноту каналов на мирроре. Если все каналы - ок.
