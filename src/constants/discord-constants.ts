@@ -8,4 +8,4 @@ export const options = {
     hour12: false,
 };
 
-export const fileName = new Date(Date.now()).toLocaleString("ru-Ru", options);
+export const fileName = Date.now();
