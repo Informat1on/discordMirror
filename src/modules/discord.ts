@@ -192,17 +192,17 @@ export async function listen(): Promise<void> {
   });
 
   socket.onclose = (event) => {
-    if (!isProgramClose) {
-      return;
-    }
-    consLog(`Close event is: ${event}`);
+    // if (!isProgramClose) {
+    //   return;
+    // }
+    consLog(`Close event reason is: ${event.reason}`);
     consLog('Waiting 6 sec for restart...');
     isProgramClose = false;
     setTimeout(listen, 6000);
   };
 
   socket.on('close', (event) => {
-    consLog('Im closing. Its socket.on');
+    consLog(`Im closing. Its socket.on. Close event code: ${event}.`);
   });
 
   socket.on('error', (e) => {
