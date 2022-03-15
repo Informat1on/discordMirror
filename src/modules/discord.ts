@@ -17,6 +17,7 @@ export async function listen(): Promise<void> {
   let authenticated = false;
   let sequenceNumber: number;
   let sessionId: string;
+  let isProgramClose = false;
 
   consLog(`Socket loaded: ${!!socket}`);
 
@@ -121,6 +122,7 @@ export async function listen(): Promise<void> {
             },
           },
         };
+        isProgramClose = true;
         socket.send(JSON.stringify(payload));
         // im closing socket
         consLog('Closing the socket...');
@@ -202,8 +204,29 @@ export async function listen(): Promise<void> {
   });
 
   socket.onclose = (event) => {
+    if (!isProgramClose) {
+      return;
+    }
     consLog(`Close event is: ${event}`);
     consLog('Waiting 6 sec for restart...');
+    isProgramClose = false;
     setTimeout(listen, 6000);
   };
+
+  socket.on('close', (event) => {
+    consLog('Im closing. Its socket.on');
+  });
+
+  socket.on('error', (e) => {
+    consLog(`There is error event: ${e.message}`);
+    sendErrorToDiscord(e.message);
+  })
+
+  socket.on('ping', ()=>{
+    consLog('Ping!');
+  })
+
+  socket.on('pong', ()=> {
+    consLog('Pong!');
+  });
 }
