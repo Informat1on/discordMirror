@@ -108,22 +108,10 @@ export async function listen(): Promise<void> {
 
       // 7 - Reconnect. We should try to reconnect.
       case 7:
-        // TODO:
+        // TODO: Fix all issues
         consLog('Reconnecting...');
         await sendInfoToDiscord("Reconnecting..");
-        const payload = {
-          op: 2,
-          d: {
-            token: discordToken,
-            properties: {
-              $os: "linux",
-              $browser: "test",
-              $device: "test",
-            },
-          },
-        };
         isProgramClose = true;
-        socket.send(JSON.stringify(payload));
         // im closing socket
         consLog('Closing the socket...');
         socket.close(1000, "Received retry");
