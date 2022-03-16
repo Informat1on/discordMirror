@@ -192,9 +192,9 @@ export async function listen(): Promise<void> {
   });
 
   socket.onclose = (event) => {
-    // if (!isProgramClose) {
-    //   return;
-    // }
+    if (!isProgramClose) {
+      return;
+    }
     consLog(`Close event reason is: ${event.reason}`);
     consLog('Waiting 6 sec for restart...');
     isProgramClose = false;
