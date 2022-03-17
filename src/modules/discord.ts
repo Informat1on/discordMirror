@@ -203,6 +203,12 @@ export async function listen(): Promise<void> {
 
   socket.on('close', (event) => {
     consLog(`Im closing. Its socket.on. Close event code: ${event}.`);
+    if (event === 1000) {
+      return;
+    }
+    consLog('Restarting...');
+    consLog('Waiting 6 sec for restart...');
+    setTimeout(listen, 6000);
   });
 
   socket.on('error', (e) => {
