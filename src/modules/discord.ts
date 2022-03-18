@@ -18,6 +18,7 @@ export async function listen(): Promise<void> {
   let sequenceNumber: number;
   let sessionId: string;
   let isProgramClose = false;
+  let currTime = Date.now();
 
   consLog(`Socket loaded: ${!!socket}`);
 
@@ -32,6 +33,14 @@ export async function listen(): Promise<void> {
   });
 
   socket.on("message", async (data: Websocket.Data) => {
+    let checkedDate = Date.now();
+    if ((checkedDate - currTime)/216000 >= 60) {
+      consLog('Closing socket after timeout...');
+      socket.close();
+      currTime = Date.now();
+    }
+
+
     const message = JSON.parse(data.toString());
 
     switch (message.op) {
