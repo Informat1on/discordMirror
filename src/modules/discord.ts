@@ -34,7 +34,7 @@ export async function listen(): Promise<void> {
 
   socket.on("message", async (data: Websocket.Data) => {
     let checkedDate = Date.now();
-    if ((checkedDate - currTime)/126000 >= 35) {
+    if ((checkedDate - currTime)/126000 >= 13) {
       consLog('Closing socket after timeout...');
       socket.close();
       currTime = Date.now();
